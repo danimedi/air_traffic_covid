@@ -74,11 +74,52 @@ embarking <- embarking %>% rename("PROVINCIA" = "Aeródromos/Aeropuertos")
 landing <- landing %>% rename("PROVINCIA" = "Aeródromos/Aeropuertos")
 
 
+# process population data -------------------------------------------------
+
+change_province_names <- function(x) {
+  case_when(
+    x == "SAN MARTÍN" ~ "SAN MARTIN",
+    x == "SAN ROMÁN" ~ "SAN ROMAN",
+    x == "JAÉN" ~ "JAEN",
+    x == "LA CONVENCIÓN" ~ "LA CONVENCION",
+    x == "HUÁNUCO" ~ "HUANUCO",
+    x == "DATEM DEL MARAÑÓN" ~ "DATEM DEL MARAÑON",
+    x == "MARISCAL RAMÓN CASTILLA" ~ "MARISCAL RAMON CASTILLA",
+    x == "PURÚS" ~ "PURUS",
+    x == "RODRÍGUEZ DE MENDOZA" ~ "RODRIGUEZ DE MENDOZA",
+    TRUE ~ as.character(x)
+  )
+}
+pop$provincia <- change_province_names(pop$provincia)
+
+# check
+unique(embarking$PROVINCIA[!embarking$PROVINCIA %in% pop$provincia])
+
+# check repeated provinces (actually they are departments)
+pop %>% group_by(provincia) %>% count() %>% filter(n > 1)
+
+# deal with repeated provinces
+y <- vector("list", length(unique(pop$provincia)))
+k <- 1
+for (i in unique(pop$provincia)) {
+  x <- filter(pop, provincia == i) %>% arrange(poblacion) %>% .[1,]
+  # selecting the province instead of the departament, because it has less population
+  y[[k]] <- x
+  k <- k + 1
+}
+pop <- bind_rows(y)
+
+
 # filter ------------------------------------------------------------------
 
 # filter data set by the provinces with airport
-filt_positivos <- positivos %>% filter(PROVINCIA %in% landing$`Aeródromos/Aeropuertos`)
-filt_fallecidos <- fallecidos %>% filter(PROVINCIA %in% landing$`Aeródromos/Aeropuertos`)
+filt_positivos <- positivos %>% filter(PROVINCIA %in% landing$PROVINCIA)
+filt_fallecidos <- fallecidos %>% filter(PROVINCIA %in% landing$PROVINCIA)
+
+# deal with the repeated names of provinces in different departments
+filt_fallecidos <- filt_fallecidos %>% 
+  filter(!(DEPARTAMENTO == "LAMBAYEQUE" & PROVINCIA == "PIURA")) %>% 
+  filter(!((DEPARTAMENTO == "CALLAO" | DEPARTAMENTO == "LAMBAYEQUE") & PROVINCIA == "LIMA"))
 
 # check that there are not repeated names for provinces (select the provinces with airports)
 filt_positivos %>% 
@@ -95,22 +136,24 @@ filt_fallecidos %>%
   count() %>% 
   filter(n > 1)
 
-# deal with the repeated names of provinces in different departments
-filt_fallecidos <- filt_fallecidos %>% 
-  filter(!(DEPARTAMENTO == "LAMBAYEQUE" & PROVINCIA == "PIURA")) %>% 
-  filter(!((DEPARTAMENTO == "CALLAO" | DEPARTAMENTO == "LAMBAYEQUE") & PROVINCIA == "LIMA"))
-
 
 # combine -----------------------------------------------------------------
 
+# join positive cases and deaths by covid-19
 dat <- full_join(filt_positivos, filt_fallecidos, 
                  by = c("DEPARTAMENTO", "PROVINCIA", "MES"), 
                  suffix = c("_positivos", "_fallecidos"))
 
+# join flight data
 dat <- left_join(dat, embarking, by = c("PROVINCIA", "MES")) %>% 
   left_join(landing, by = c("PROVINCIA", "MES"), suffix = c("_embarcados", "_desembarcados"))
 
-names(dat) <- c("departamento", "provincia", "mes", "n_positivos", "n_fallecidos", "n_embarcados", "n_desembarcados")
+# join population in the province
+dat <- left_join(dat, pop, by = c("PROVINCIA" = "provincia"))
+
+# change names
+names(dat) <- c("departamento", "provincia", "mes", "n_positivos", "n_fallecidos", 
+                "n_embarcados", "n_desembarcados", "poblacion")
 
 
 # write combined data -----------------------------------------------------
