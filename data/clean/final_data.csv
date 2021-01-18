@@ -1,4 +1,4 @@
-departamento,provincia,mes,n_positivos,n_fallecidos,n_embarcados,n_desembarcados,poblacion
+departamento,provincia,mes,n_positivos,n_fallecidos,n_embarcados,n_desembarcados,poblacion_provincia
 AMAZONAS,CHACHAPOYAS,1,95,NA,166,169,63188
 AMAZONAS,CHACHAPOYAS,4,59,NA,NA,NA,63188
 AMAZONAS,CHACHAPOYAS,5,181,NA,NA,NA,63188

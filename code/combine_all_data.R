@@ -153,7 +153,7 @@ dat <- left_join(dat, pop, by = c("PROVINCIA" = "provincia"))
 
 # change names
 names(dat) <- c("departamento", "provincia", "mes", "n_positivos", "n_fallecidos", 
-                "n_embarcados", "n_desembarcados", "poblacion")
+                "n_embarcados", "n_desembarcados", "poblacion_provincia")
 
 
 # write combined data -----------------------------------------------------
