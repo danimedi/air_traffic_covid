@@ -22,12 +22,12 @@ positivos[,"FECHA_RESULTADO"] <- month(positivos[,"FECHA_RESULTADO"][[1]])
 
 fallecidos %>% 
   rename(MES = FECHA_FALLECIMIENTO) %>% 
-  group_by(PROVINCIA, MES) %>% 
+  group_by(DEPARTAMENTO, PROVINCIA, MES) %>% 
   count() %>% 
   write_csv("data/clean/fallecidos_covid.csv")
 
 positivos %>% 
   rename(MES = FECHA_RESULTADO) %>% 
-  group_by(PROVINCIA, MES) %>% 
+  group_by(DEPARTAMENTO, PROVINCIA, MES) %>% 
   count() %>% 
   write_csv("data/clean/positivos_covid.csv")
